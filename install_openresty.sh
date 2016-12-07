@@ -9,10 +9,14 @@ CUR_DIR=$(pwd)
 RESTY_USER="nginx"
 RESTY_GROUP="nginx"
 
+# 源码包
 OPENSSL_TAR_PACKAGE="source/openssl-1.0.2j.tar.gz"
 ZLIB_TAR_PACKAGE="source/zlib-1.2.8.tar.gz"
 PCRE_TAR_PACKAGE="source/pcre-8.39.tar.gz"
 OPENRESTY_TAR_PACKAGE="source/openresty-1.11.2.2.tar.gz"
+
+# nginx第三方模块源码
+NGINX_UPSTREAM_CHEK_MODULE_PACKAGE="source/module/nginx_upstream_check_module.tar.gz"
 
 RESTY_SOURCE_DIR="/opt/openresty/source" # 源码包将解压到该目录
 RESTY_BINARY_DIR="/opt/openresty"        # configure prefix目录
@@ -55,7 +59,8 @@ RESTY_CONFIG_OPTIONS="--prefix=${RESTY_BINARY_DIR} \
                       --with-http_ssl_module \
                       --without-mail_pop3_module \
                       --without-mail_imap_module \
-                      --without-mail_smtp_module"
+                      --without-mail_smtp_module \
+                      --add-module=${RESTY_SOURCE_DIR}/nginx_upstream_check_module"
 
 
 ###################################################################
@@ -75,9 +80,14 @@ tar -xzf ${OPENSSL_TAR_PACKAGE} -C ${RESTY_SOURCE_DIR}
 tar -xzf ${ZLIB_TAR_PACKAGE} -C ${RESTY_SOURCE_DIR}
 tar -xzf ${PCRE_TAR_PACKAGE} -C ${RESTY_SOURCE_DIR}
 tar -xzf ${OPENRESTY_TAR_PACKAGE} -C ${RESTY_SOURCE_DIR}
+tar -xzf ${NGINX_UPSTREAM_CHEK_MODULE_PACKAGE} -C ${RESTY_SOURCE_DIR}
+
+# 打nginx补丁
+cd ${RESTY_SOURCE_DIR}/openresty-${RESTY_VERSION}/bundle/nginx-1.11.2
+patch -p0 < ${RESTY_SOURCE_DIR}/nginx_upstream_check_module/check_1.11.1+.patch
 
 # 编译安装
-cd /${RESTY_SOURCE_DIR}/openresty-${RESTY_VERSION}
+cd ${RESTY_SOURCE_DIR}/openresty-${RESTY_VERSION}
 ./configure -j${RESTY_J} ${RESTY_3RD_DEPS} ${RESTY_CONFIG_OPTIONS}
 make -j${RESTY_J}
 make -j${RESTY_J} install
