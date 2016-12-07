@@ -9,19 +9,19 @@ CUR_DIR=$(pwd)
 RESTY_USER="nginx"
 RESTY_GROUP="nginx"
 
-RESTY_SOURCE_DIR="/opt/openresty/source"
-RESTY_BINARY_DIR="/opt/openresty"
+OPENSSL_TAR_PACKAGE="source/openssl-1.0.2j.tar.gz"
+ZLIB_TAR_PACKAGE="source/zlib-1.2.8.tar.gz"
+PCRE_TAR_PACKAGE="source/pcre-8.39.tar.gz"
+OPENRESTY_TAR_PACKAGE="source/openresty-1.11.2.2.tar.gz"
+
+RESTY_SOURCE_DIR="/opt/openresty/source" # 源码包将解压到该目录
+RESTY_BINARY_DIR="/opt/openresty"        # configure prefix目录
 RESTY_LOG_DIR="/var/log/nginx"
 
 RESTY_VERSION="1.11.2.2"
 RESTY_OPENSSL_VERSION="1.0.2j"
 RESTY_PCRE_VERSION="8.39"
 RESTY_ZLIB_VERSION="1.2.8"
-
-OPENSSL_TAR_PACKAGE="openssl-1.0.2j.tar.gz"
-ZLIB_TAR_PACKAGE="zlib-1.2.8.tar.gz"
-PCRE_TAR_PACKAGE="pcre-8.39.tar.gz"
-OPENRESTY_TAR_PACKAGE="openresty-1.11.2.2.tar.gz"
 
 RESTY_J="4"
 
@@ -82,20 +82,33 @@ cd /${RESTY_SOURCE_DIR}/openresty-${RESTY_VERSION}
 make -j${RESTY_J}
 make -j${RESTY_J} install
 
+# 创建nginx lua文件夹
+mkdir -p ${RESTY_BINARY_DIR}/nginx/lua
+
+# 创建website文件夹，用于虚拟主机
+mkdir -p ${RESTY_BINARY_DIR}/nginx/website
+
 # 复制nginx配置文件
 cd ${CUR_DIR}
-cp nginx.conf ${RESTY_BINARY_DIR}/nginx/conf
+cp conf/nginx.conf ${RESTY_BINARY_DIR}/nginx/conf
 chmod 644 ${RESTY_BINARY_DIR}/nginx/conf/nginx.conf
-
-# 修改openresty目录权限
-chown -R ${RESTY_USER}:${RESTY_GROUP} ${RESTY_BINARY_DIR}
+cp conf/default.conf ${RESTY_BINARY_DIR}/nginx/website
+chmod 644 ${RESTY_BINARY_DIR}/nginx/website/default.conf
 
 # 复制systemd
 cd ${CUR_DIR}
-cp openresty.service /usr/lib/systemd/system
+cp systemd/openresty.service /usr/lib/systemd/system
 chmod 644 /usr/lib/systemd/system/openresty.service
 systemctl daemon-reload
 
 # 创建日志文件夹
 mkdir -p ${RESTY_LOG_DIR}
 chown -R ${RESTY_USER}:${RESTY_GROUP} ${RESTY_LOG_DIR}
+
+# 复制logrotate配置文件，用于日志分割
+cd ${CUR_DIR}
+cp logrotate/logrotate_nginx.conf /etc/logrotate.d
+chmod 644 /etc/logrotate.d/logrotate_nginx.conf
+
+# 修改openresty目录权限
+chown -R ${RESTY_USER}:${RESTY_GROUP} ${RESTY_BINARY_DIR}
